@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        /* Estilos anteriores mantidos */
         :root {
             --primary-color: #1a5276;
             --secondary-color: #2980b9;
@@ -244,6 +245,9 @@
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             position: relative;
+            width: 100%;
+            max-width: 210mm; /* Largura A4 */
+            margin: 0 auto;
         }
         
         .proposta-header {
@@ -271,6 +275,7 @@
             margin-bottom: 30px;
             position: relative;
             z-index: 2;
+            page-break-inside: avoid;
         }
         
         .proposta-section h3 {
@@ -357,8 +362,8 @@
         
         .logo-empresa {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 50px;
+            right: 40px;
             width: 120px;
             height: 120px;
             border-radius: 50%;
@@ -470,6 +475,74 @@
             border: 1px solid #f5c6cb;
         }
         
+        .payback-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .alerta-prazo {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid #ffeaa7;
+            font-size: 14px;
+        }
+        
+        /* Estilos específicos para PDF */
+        .pdf-select {
+            background-color: white !important;
+            border: 1px solid #ddd !important;
+            color: #333 !important;
+        }
+        
+        .pdf-page-break {
+            page-break-before: always;
+        }
+        
+        .pdf-section-1 {
+            /* Primeira página - até análise de payback */
+        }
+        
+        .pdf-section-2 {
+            /* Segunda página - condições de pagamento até garantias */
+            page-break-before: always;
+        }
+        
+        .pdf-section-3 {
+            /* Terceira página - materiais incluídos até o final */
+            page-break-before: always;
+        }
+
+        /* Novos estilos para páginas separadas */
+        .proposta-pagina {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: relative;
+            width: 100%;
+            max-width: 210mm; /* Largura A4 */
+            margin: 0 auto 20px;
+            page-break-after: always;
+        }
+        
+        .pdf-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .pdf-controls .btn {
+            margin: 5px;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -505,6 +578,39 @@
             .contact-info {
                 flex-direction: column;
                 align-items: center;
+            }
+            
+            .proposta-final {
+                padding: 15px;
+            }
+            
+            .pdf-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Media query para impressão/PDF */
+        @media print {
+            .proposta-final {
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+            
+            .action-buttons {
+                display: none;
+            }
+            
+            .tabs, header {
+                display: none;
+            }
+            
+            .container {
+                padding: 0;
+                margin: 0;
+                max-width: none;
             }
         }
     </style>
@@ -826,6 +932,12 @@
                     <span class="result-label">Lucro líquido (R$):</span>
                     <span class="result-value valor-real" id="lucro-liquido">R$ 0,00</span>
                 </div>
+                
+                <!-- ADICIONANDO A RELAÇÃO R$/Wp NA ANÁLISE FINANCEIRA -->
+                <div class="result-item">
+                    <span class="result-label">Relação R$/Wp:</span>
+                    <span class="result-value valor-real" id="relacao-wp-financeiro">R$ 0,00</span>
+                </div>
             </div>
             
             <div class="action-buttons">
@@ -836,13 +948,14 @@
         
         <!-- ABA PROPOSTA FINAL -->
         <div id="proposta-final" class="tab-content">
-            <div class="proposta-final" id="proposta-para-pdf">
+            <!-- PÁGINA 1 - Informações do cliente e características do sistema -->
+            <div class="proposta-pagina" id="pagina-1">
                 <!-- Papel timbrado -->
-                <div class="watermark" id="watermark"></div>
+                <div class="watermark" id="watermark-1"></div>
                 
                 <!-- Logo da empresa -->
-                <div class="logo-empresa" id="logo-empresa">
-                    <img src="data:image/png;base64,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" id="logo-image">
+                <div class="logo-empresa" id="logo-empresa-1">
+                    <img src="data:image/png;base64,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" id="logo-image-1" >
                 </div>
                 
                 <!-- Cabeçalho do PDF -->
@@ -851,6 +964,7 @@
                         <h1>PROPOSTA COMERCIAL</h1>
                         <p>SISTEMA FOTOVOLTAICO</p>
                         <p>JouleLab - Soluções em Energia Solar</p>
+                        <p><strong>Av. Rio Grande do Sul, 1345, Bairro dos Estados, Cep:58.030-020, João Pessoa-PB <br> CNPJ:39.970.300/0001-39</strong></p>
                     </div>
                 </div>
                 
@@ -864,7 +978,12 @@
                     </div>
                     <div class="modern-card">
                         <h4>DADOS DA PROPOSTA</h4>
-                        <p><strong>Tecnologia:</strong> String</p>
+                        <p><strong>Tecnologia:</strong> 
+                            <select id="proposta-tecnologia" class="editable-field pdf-select" style="width: 120px; display: inline;">
+                                <option value="String">String</option>
+                                <option value="MLPE">MLPE</option>
+                            </select>
+                        </p>
                         <p><strong>Emissão:</strong> <span id="proposta-emissao">2025-11-10</span></p>
                         <p><strong>Controle:</strong> <span id="proposta-controle">1110-1-GD-MIC</span></p>
                         <p><strong>Emissor:</strong> Eng. Alexandre Gomes</p>
@@ -900,11 +1019,52 @@
                         </div>
                     </div>
                     
+                    <!-- CALCULO DE PAYBACK ADICIONADO -->
+                    <div class="payback-box" id="payback-container">
+                        <h4>ANÁLISE DE PAYBACK</h4>
+                        <div class="result-item">
+                            <span class="result-label">Tempo de Retorno do Investimento:</span>
+                            <span class="result-value valor-real" id="proposta-payback">0 anos</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Economia Anual Estimada:</span>
+                            <span class="result-value valor-real" id="proposta-economia-anual">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PÁGINA 2 - Condições de pagamento e garantias -->
+            <div class="proposta-pagina" id="pagina-2">
+                <!-- Papel timbrado -->
+                <div class="watermark" id="watermark-2"></div>
+                
+                <!-- Logo da empresa -->
+                <div class="logo-empresa" id="logo-empresa-2">
+                    <img src="data:image/png;base64,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" id="logo-image-2" >
+                </div>
+                
+                <!-- Cabeçalho do PDF -->
+                <div class="header-pdf">
+                    <div class="header-content-pdf">
+                        <h1>PROPOSTA COMERCIAL</h1>
+                        <p>SISTEMA FOTOVOLTAICO</p>
+                        <p>JouleLab - Soluções em Energia Solar</p>
+                        <p><strong>Av. Rio Grande do Sul, 1345, Bairro dos Estados, Cep:58.030-020, João Pessoa-PB <br> CNPJ:39.970.300/0001-39</strong></p>
+                    </div>
+                </div>
+                
+                <div class="proposta-section">
+                    <h3>CONDIÇÕES DE PAGAMENTO</h3>
                     <div class="proposta-info">
                         <div class="modern-card">
-                            <h4>CONDIÇÕES DE PAGAMENTO</h4>
                             <p><strong>Financiamento:</strong> Até <input type="number" id="proposta-financiamento-parcelas" class="editable-field" value="60" style="width: 60px; display: inline;">x</p>
                             <p><strong>Cartão de Crédito:</strong> Até <input type="number" id="proposta-cartao-parcelas" class="editable-field" value="12" style="width: 60px; display: inline;">x</p>
+                            <p><strong>À Vista:</strong> 
+                                <input type="number" id="proposta-avista-1" class="editable-field" value="80" style="width: 55px; display: inline;">% - 
+                                <input type="number" id="proposta-avista-2" class="editable-field" value="10" style="width: 55px; display: inline;">% - 
+                                <input type="number" id="proposta-avista-3" class="editable-field" value="10" style="width: 55px; display: inline;">%
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -921,28 +1081,31 @@
                         <tbody>
                             <tr>
                                 <td>Visita Técnica</td>
-                                <td><input type="number" id="proposta-visita-tecnica" class="editable-field" value="3" style="width: 40px; display: inline;"> Dias</td>
+                                <td><input type="number" id="proposta-visita-tecnica" class="editable-field" value="3" style="width: 50px; display: inline;"> Dias</td>
                             </tr>
                             <tr>
                                 <td>Elaboração de Projeto</td>
-                                <td><input type="number" id="proposta-elaboracao-projeto" class="editable-field" value="7" style="width: 40px; display: inline;"> Dias</td>
+                                <td><input type="number" id="proposta-elaboracao-projeto" class="editable-field" value="7" style="width: 50px; display: inline;"> Dias</td>
                             </tr>
-                            
                             <tr>
                                 <td>Concessionária</td>
-                                <td><input type="number" id="proposta-concessionaria" class="editable-field" value="20" style="width: 40px; display: inline;"> Dias</td>
+                                <td><input type="number" id="proposta-concessionaria" class="editable-field" value="20" style="width: 50px; display: inline;"> Dias</td>
                             </tr>
                             <tr>
                                 <td>Instalação</td>
-                                <td><input type="number" id="proposta-instalacao" class="editable-field" value="2" style="width: 40px; display: inline;"> Dias</td>
+                                <td><input type="number" id="proposta-instalacao" class="editable-field" value="2" style="width: 50px; display: inline;"> Dias</td>
                             </tr>
-                            
                             <tr>
                                 <td><strong>Tempo Total Médio de Implantação</strong></td>
                                 <td><strong id="proposta-tempo-total">32</strong> Dias</td>
                             </tr>
                         </tbody>
                     </table>
+                    
+                    <!-- MENSAGEM DE ALERTA ADICIONADA -->
+                    <div class="alerta-prazo">
+                        <strong>ATENÇÃO:</strong> Caso a concessionária exija melhoria na rede elétrica, este prazo pode se alterar significativamente.
+                    </div>
                 </div>
                 
                 <div class="proposta-section">
@@ -960,16 +1123,36 @@
                                 <td><input type="number" id="proposta-garantia-instalacao" class="editable-field" value="1" style="width: 60px; display: inline;"> Ano(s)</td>
                             </tr>
                             <tr>
-                                <td>(Micro)Inversor</td>
+                                <td>Inversor</td>
                                 <td><input type="number" id="proposta-garantia-inversor" class="editable-field" value="10" style="width: 60px; display: inline;"> Anos</td>
                             </tr>
                             <tr>
                                 <td>Módulo</td>
                                 <td><input type="number" id="proposta-garantia-modulo" class="editable-field" value="12" style="width: 60px; display: inline;"> Anos</td>
                             </tr>
-                            
                         </tbody>
                     </table>
+                </div>
+            </div>
+            
+            <!-- PÁGINA 3 - Materiais incluídos e rodapé -->
+            <div class="proposta-pagina" id="pagina-3">
+                <!-- Papel timbrado -->
+                <div class="watermark" id="watermark-3"></div>
+                
+                <!-- Logo da empresa -->
+                <div class="logo-empresa" id="logo-empresa-3">
+                    <img src="data:image/png;base64,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" id="logo-image-3" >
+                </div>
+                
+                <!-- Cabeçalho do PDF -->
+                <div class="header-pdf">
+                    <div class="header-content-pdf">
+                        <h1>PROPOSTA COMERCIAL</h1>
+                        <p>SISTEMA FOTOVOLTAICO</p>
+                        <p>JouleLab - Soluções em Energia Solar</p>
+                        <p><strong>Av. Rio Grande do Sul, 1345, Bairro dos Estados, Cep:58.030-020, João Pessoa-PB <br> CNPJ:39.970.300/0001-39</strong></p>
+                    </div>
                 </div>
                 
                 <div class="proposta-section">
@@ -1015,7 +1198,7 @@
                         </div>
                         <div class="contact-item">
                             <span>📧</span>
-                            <span>joule@joule.eco.br</span>
+                            <span>portal@joule.eco.br</span>
                         </div>
                         <div class="contact-item">
                             <span>🌐</span>
@@ -1030,9 +1213,13 @@
                 </div>
             </div>
             
-            <div class="action-buttons">
+            <!-- Controles de PDF -->
+            <div class="pdf-controls">
                 <button class="btn" onclick="atualizarProposta()">Atualizar Proposta</button>
-                <button class="btn btn-success" onclick="gerarPDF()">Exportar para PDF</button>
+                <button class="btn" onclick="gerarPDF(1)">Gerar PDF Página 1</button>
+                <button class="btn" onclick="gerarPDF(2)">Gerar PDF Página 2</button>
+                <button class="btn" onclick="gerarPDF(3)">Gerar PDF Página 3</button>
+                <button class="btn btn-success" onclick="gerarPDFCompleto()">Gerar PDF Completo</button>
             </div>
         </div>
     </div>
@@ -1196,35 +1383,38 @@
 
         // Função para criar marca d'água
         function criarMarcaDagua() {
-            const watermark = document.getElementById('watermark');
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Definir dimensões do canvas
-            canvas.width = 800;
-            canvas.height = 800;
-            
-            // Configurar estilo da marca d'água
-            ctx.fillStyle = 'rgba(26, 82, 118, 0.03)';
-            ctx.font = 'bold 100px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Rotacionar o texto
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate(-Math.PI / 4);
-            
-            // Desenhar texto repetido
-            for (let i = -5; i <= 5; i++) {
+            // Criar marca d'água para cada página
+            for (let i = 1; i <= 3; i++) {
+                const watermark = document.getElementById(`watermark-${i}`);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Definir dimensões do canvas
+                canvas.width = 800;
+                canvas.height = 800;
+                
+                // Configurar estilo da marca d'água
+                ctx.fillStyle = 'rgba(26, 82, 118, 0.03)';
+                ctx.font = 'bold 100px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Rotacionar o texto
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(-Math.PI / 4);
+                
+                // Desenhar texto repetido
                 for (let j = -5; j <= 5; j++) {
-                    ctx.fillText('JouleLab', i * 300, j * 150);
+                    for (let k = -5; k <= 5; k++) {
+                        ctx.fillText('JouleLab', j * 300, k * 150);
+                    }
                 }
+                
+                // Definir como background da marca d'água
+                watermark.style.backgroundImage = `url(${canvas.toDataURL()})`;
+                watermark.style.backgroundRepeat = 'repeat';
+                watermark.style.backgroundSize = '400px 400px';
             }
-            
-            // Definir como background da marca d'água
-            watermark.style.backgroundImage = `url(${canvas.toDataURL()})`;
-            watermark.style.backgroundRepeat = 'repeat';
-            watermark.style.backgroundSize = '400px 400px';
         }
 
         // Funções para navegação entre abas
@@ -1559,6 +1749,13 @@
             // Cálculo do lucro líquido
             const lucroLiquido = lucroBruto * (1 - imposto / 100);
             
+            // Cálculo da relação R$/Wp
+            const potenciaSistema = parseFloat(document.getElementById('potencia-sistema').textContent) || 0;
+            let relacaoWp = 0;
+            if (potenciaSistema > 0) {
+                relacaoWp = valorProposta / (potenciaSistema * 1000);
+            }
+            
             // Atualizar resultados
             document.getElementById('custos-operacionais').textContent = formatarMoeda(custosOperacionais);
             document.getElementById('custo-material').textContent = formatarMoeda(custoMaterial);
@@ -1566,6 +1763,7 @@
             document.getElementById('valor-comissao').textContent = formatarMoeda(valorComissao);
             document.getElementById('lucro-bruto').textContent = formatarMoeda(lucroBruto);
             document.getElementById('lucro-liquido').textContent = formatarMoeda(lucroLiquido);
+            document.getElementById('relacao-wp-financeiro').textContent = formatarMoeda(relacaoWp);
         }
 
         // Funções da aba PROPOSTA FINAL
@@ -1597,6 +1795,9 @@
             } else {
                 document.getElementById('proposta-relacao').textContent = formatarMoeda(0);
             }
+            
+            // Calcular payback
+            calcularPayback();
             
             // Atualizar materiais incluídos
             const propostaMateriaisBody = document.getElementById('proposta-materiais-body');
@@ -1645,22 +1846,39 @@
             calcularTempoTotalProposta();
         }
         
+        function calcularPayback() {
+            const valorProposta = parseFloat(document.getElementById('valor-proposta').textContent.replace('R$ ', '').replace('.', '').replace(',', '.')) || 0;
+            const geracaoMedia = parseFloat(document.getElementById('geracao-media').textContent) || 0;
+            
+            // Supondo um valor médio de R$ 0,80 por kWh (ajuste conforme necessário)
+            const valorKwh = 0.80;
+            const economiaMensal = geracaoMedia * valorKwh;
+            const economiaAnual = economiaMensal * 12;
+            
+            let paybackAnos = 0;
+            if (economiaAnual > 0) {
+                paybackAnos = valorProposta / economiaAnual;
+            }
+            
+            document.getElementById('proposta-economia-anual').textContent = formatarMoeda(economiaAnual);
+            document.getElementById('proposta-payback').textContent = paybackAnos.toFixed(1) + ' anos';
+        }
+        
         function calcularTempoTotalProposta() {
             const visitaTecnica = parseInt(document.getElementById('proposta-visita-tecnica').value) || 0;
             const elaboracaoProjeto = parseInt(document.getElementById('proposta-elaboracao-projeto').value) || 0;
-            const emissaoArt = parseInt(document.getElementById('proposta-emissao-art').value) || 0;
             const concessionaria = parseInt(document.getElementById('proposta-concessionaria').value) || 0;
             const instalacao = parseInt(document.getElementById('proposta-instalacao').value) || 0;
-            const comissionamento = parseInt(document.getElementById('proposta-comissionamento').value) || 0;
             
-            const tempoTotal = visitaTecnica + elaboracaoProjeto + emissaoArt + concessionaria + instalacao + comissionamento;
+            const tempoTotal = visitaTecnica + elaboracaoProjeto + concessionaria + instalacao;
             document.getElementById('proposta-tempo-total').textContent = tempoTotal;
         }
         
-        function gerarPDF() {
+        // Função para gerar PDF de uma página específica
+        function gerarPDF(pagina) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
-            const element = document.getElementById('proposta-para-pdf');
+            const element = document.getElementById(`pagina-${pagina}`);
             
             // Fazer uma cópia do elemento para manipulação
             const elementClone = element.cloneNode(true);
@@ -1672,12 +1890,25 @@
                 span.textContent = input.value;
                 span.style.marginLeft = '5px';
                 span.style.fontWeight = 'normal';
+                span.style.backgroundColor = 'transparent';
                 input.parentNode.replaceChild(span, input);
+            });
+            
+            // Remover a classe de fundo rosa dos selects
+            const selects = elementClone.querySelectorAll('select');
+            selects.forEach(select => {
+                select.classList.remove('editable-field');
+                select.classList.add('pdf-select');
+                select.style.backgroundColor = 'white';
+                select.style.border = '1px solid #ddd';
+                select.style.color = '#333';
             });
             
             // Adicionar o clone temporariamente ao documento
             elementClone.style.position = 'absolute';
             elementClone.style.left = '-9999px';
+            elementClone.style.width = '210mm'; // Largura A4
+            elementClone.style.padding = '15mm'; // Margens
             document.body.appendChild(elementClone);
             
             // Configurações do html2canvas
@@ -1685,30 +1916,23 @@
                 scale: 2,
                 useCORS: true,
                 allowTaint: true,
-                logging: false
+                logging: false,
+                width: elementClone.scrollWidth,
+                height: elementClone.scrollHeight,
+                windowWidth: elementClone.scrollWidth,
+                windowHeight: elementClone.scrollHeight
             }).then(canvas => {
                 // Remover o clone
                 document.body.removeChild(elementClone);
                 
                 const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 217;
-                const pageHeight = 297;
-                const imgHeight = canvas.height * imgWidth / canvas.width;
-                let heightLeft = imgHeight;
+                const imgWidth = 210; // Largura A4 em mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 
-                let position = 0;
+                // Adicionar a imagem ao PDF
+                doc.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
                 
-                doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    doc.addPage();
-                    doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                
-                doc.save('proposta_sistema_fotovoltaico.pdf');
+                doc.save(`proposta_pagina_${pagina}.pdf`);
             }).catch(error => {
                 console.error('Erro ao gerar PDF:', error);
                 // Remover o clone em caso de erro
@@ -1717,6 +1941,99 @@
                 }
                 alert('Erro ao gerar PDF. Tente novamente.');
             });
+        }
+        
+        // Função para gerar PDF completo (todas as páginas)
+        function gerarPDFCompleto() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Array para armazenar as promessas de conversão de cada página
+            const promises = [];
+            
+            // Para cada página, criar uma promessa de conversão
+            for (let i = 1; i <= 3; i++) {
+                const element = document.getElementById(`pagina-${i}`);
+                
+                // Fazer uma cópia do elemento para manipulação
+                const elementClone = element.cloneNode(true);
+                
+                // Remover todos os inputs e substituir por seus valores
+                const inputs = elementClone.querySelectorAll('input');
+                inputs.forEach(input => {
+                    const span = document.createElement('span');
+                    span.textContent = input.value;
+                    span.style.marginLeft = '5px';
+                    span.style.fontWeight = 'normal';
+                    span.style.backgroundColor = 'transparent';
+                    input.parentNode.replaceChild(span, input);
+                });
+                
+                // Remover a classe de fundo rosa dos selects
+                const selects = elementClone.querySelectorAll('select');
+                selects.forEach(select => {
+                    select.classList.remove('editable-field');
+                    select.classList.add('pdf-select');
+                    select.style.backgroundColor = 'white';
+                    select.style.border = '1px solid #ddd';
+                    select.style.color = '#333';
+                });
+                
+                // Adicionar o clone temporariamente ao documento
+                elementClone.style.position = 'absolute';
+                elementClone.style.left = '-9999px';
+                elementClone.style.width = '210mm'; // Largura A4
+                elementClone.style.padding = '15mm'; // Margens
+                document.body.appendChild(elementClone);
+                
+                // Criar uma promessa para cada página
+                const promise = html2canvas(elementClone, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    width: elementClone.scrollWidth,
+                    height: elementClone.scrollHeight,
+                    windowWidth: elementClone.scrollWidth,
+                    windowHeight: elementClone.scrollHeight
+                }).then(canvas => {
+                    // Remover o clone
+                    document.body.removeChild(elementClone);
+                    
+                    return canvas.toDataURL('image/png');
+                }).catch(error => {
+                    console.error(`Erro ao gerar página ${i}:`, error);
+                    // Remover o clone em caso de erro
+                    if (document.body.contains(elementClone)) {
+                        document.body.removeChild(elementClone);
+                    }
+                    throw error;
+                });
+                
+                promises.push(promise);
+            }
+            
+            // Quando todas as páginas estiverem prontas, criar o PDF
+            Promise.all(promises)
+                .then(images => {
+                    // Adicionar cada imagem como uma página no PDF
+                    images.forEach((imgData, index) => {
+                        if (index > 0) {
+                            doc.addPage();
+                        }
+                        
+                        const imgWidth = 210; // Largura A4 em mm
+                        const imgHeight = (doc.internal.pageSize.height * imgWidth) / doc.internal.pageSize.width;
+                        
+                        doc.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                    });
+                    
+                    doc.save('proposta_completa.pdf');
+                })
+                .catch(error => {
+                    console.error('Erro ao gerar PDF completo:', error);
+                    alert('Erro ao gerar PDF completo. Tente novamente.');
+                });
         }
         
         // Funções auxiliares
